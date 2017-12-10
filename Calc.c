@@ -4,7 +4,6 @@
 #include<math.h>
 #define N 50
 
-double x=0;
 
 void oper(char []);
 void bracket(char []);
