@@ -27,7 +27,6 @@ l = strlen(s);
 if (s[l-1]=='\n') s[--l]='\0';
 if (!strcmp(s,"exit")) return 0;
 oper(s);
-x=atof(s);
 printf("%s\a\n",s);
 }}
 
