@@ -22,14 +22,14 @@ int l;
 
 printf("%45s\n","KENDOTS CALCULATOR");
 while (1){
-printf(">> ");
+fputs(">> ",stdout);
 fgets(s,N,stdin);
 l = strlen(s);
 if (s[l-1]=='\n') s[--l]='\0';
 if (!strcmp(s,"exit")) return 0;
 oper(s);
 ans=atof(s);
-printf("%s\a\n",s);
+puts(s);
 }}
 
 int scan(char s[], char c, char d){
@@ -238,7 +238,6 @@ case '-' :
 }
 
 num2str(z,str1);
-printf("str1 = %g\n",z);
 a=strlen(str1);
 
 if (z>0){
