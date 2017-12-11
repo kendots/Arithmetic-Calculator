@@ -4,6 +4,7 @@
 #include<math.h>
 #define N 50
 
+double ans=0;
 
 void oper(char []);
 void bracket(char []);
@@ -27,6 +28,7 @@ l = strlen(s);
 if (s[l-1]=='\n') s[--l]='\0';
 if (!strcmp(s,"exit")) return 0;
 oper(s);
+ans=atof(s);
 printf("%s\a\n",s);
 }}
 
@@ -59,7 +61,8 @@ return -2;
 
 
 void constants(char s[]){
-int m,n,i;
+int m,n,i,l,k;
+char t[]="ans",r[N];
 m=scan(s,'e',1);
 n=strlen(s);
 while (m>-1){
@@ -70,8 +73,29 @@ s[i]="*10^"[i-m];
 m=scan(s,'e',1);
 n+=3;
 s[n]='\0';
-}}
+}
 
+m=scan2(s,t);
+n=strlen(s);
+num2str(ans,r);
+l=strlen(r);
+k=3-l;
+while (m>-1){
+n-=k;
+if (k>=0){
+for (i=m+l;i<n; i++)
+s[i]=s[i+k];
+s[i]='\0';
+}
+else{
+for (i=n-1; i>m+l-1;i--)
+s[i]=s[i+k];
+s[n]='\0';
+}
+for (i=m; i<m+l; i++)
+s[i]=r[i-m];
+m=scan2(s,t);
+}}
 
 void unary(char s[]){
 int o,i;
