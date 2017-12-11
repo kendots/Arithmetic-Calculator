@@ -15,20 +15,34 @@ int  scan(char [], char, char);
 int  scan2(char [], char[]);
 void solve(char [], char);
 void constants(char []);
+int get(char []);
 
 main (){
 char s[N];
-int l;
 
 printf("%45s\n","KENDOTS CALCULATOR");
 while (1){
 fputs(">> ",stdout);
-gets(s);
+get(s);
 if (!strcmp(s,"exit")) return 0;
 oper(s);
 ans=atof(s);
 puts(s);
 }}
+
+
+int get(char s[]){
+int l;
+fgets(s,N,stdin);
+l=strlen(s);
+if (l>N){
+puts("Error: the inputted string is too large");
+return 0;
+}
+if (s[l-1]=='\n') s[--l]='\0';
+return l;
+}
+
 
 int scan(char s[], char c, char d){
 int i,n;
@@ -245,7 +259,7 @@ str1[0]='+';
 str1[++a]='\0';
 }
 
-b=j-i-1-a; //difference between original expression and the ans
+b=j-i-1-a; //difference between original expression and the result
 n-=b;
 
 if (b>0)
