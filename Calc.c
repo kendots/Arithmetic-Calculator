@@ -281,11 +281,6 @@ solve(s,'-');
 solve(s,'+');
 }
 
-double abso (double z){
-if (z<0) return -z;
-return z;
-}
-
 void num2str(double n, char s[]){
 int x,i,y=-1,k=0,m=1,b,a=0;
 double z;
@@ -296,14 +291,14 @@ s[0]='-';
 }
 
 b=(int) n;
-z=abso(n-b);
+z=abs(n-b);
 if (b>9) m = (int) log10(n)+1;
 
 while (z>1e-4 && m+k<9){
 n*=10;
 k++;
 b=(int) n;
-z=abso(n-b);
+z=abs(n-b);
 }
 m+=k+y+1;
 
