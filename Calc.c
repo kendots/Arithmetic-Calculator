@@ -238,6 +238,7 @@ case '-' :
 }
 
 num2str(z,str1);
+printf("str1 = %g\n",z);
 a=strlen(str1);
 
 if (z>0){
@@ -281,6 +282,12 @@ solve(s,'-');
 solve(s,'+');
 }
 
+
+double abso(double x){
+if (x<0) return -x;
+return x;
+}
+
 void num2str(double n, char s[]){
 int x,i,y=-1,k=0,m=1,b,a=0;
 double z;
@@ -291,14 +298,14 @@ s[0]='-';
 }
 
 b=(int) n;
-z=abs(n-b);
+z=abso(n-b);
 if (b>9) m = (int) log10(n)+1;
 
 while (z>1e-4 && m+k<9){
 n*=10;
 k++;
 b=(int) n;
-z=abs(n-b);
+z=abso(n-b);
 }
 m+=k+y+1;
 
