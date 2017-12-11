@@ -23,9 +23,7 @@ int l;
 printf("%45s\n","KENDOTS CALCULATOR");
 while (1){
 fputs(">> ",stdout);
-fgets(s,N,stdin);
-l = strlen(s);
-if (s[l-1]=='\n') s[--l]='\0';
+gets(s);
 if (!strcmp(s,"exit")) return 0;
 oper(s);
 ans=atof(s);
