@@ -2,9 +2,12 @@
 #include<stdlib.h>
 #include<string.h>
 #include<math.h>
+#include<setjmp.h>
 #define N 50
+#define M 1e-5
 
 double ans=0;
+static jmp_buf buff;
 
 void oper(char []);
 void bracket(char []);
@@ -12,9 +15,10 @@ void unar(char [], char []);
 void unary(char []);
 void num2str(double, char []);
 int  scan(char [], char, char);
-int  scan2(char [], char[]);
+int  scan2(char [], char[], char);
 void solve(char [], char);
 void constants(char []);
+void Fill(char [], char [], int, int);
 int get(char []);
 
 main (){
@@ -22,6 +26,7 @@ char s[N];
 
 printf("%45s\n","KENDOTS CALCULATOR");
 while (1){
+setjmp(buff);
 fputs(">> ",stdout);
 get(s);
 if (!strcmp(s,"exit")) return 0;
@@ -58,67 +63,66 @@ if (s[i]==c) return i;
 return -2;
 }
 
-int scan2(char s[], char k[]){
+int scan2(char s[], char k[], char mode){
 int i,j,n,m;
 n=strlen(s);
 m=strlen(k);
+if (mode){
 for (i=0; i<n; i++)
 if (s[i]==k[0]){
 for (j=0; j<m; j++)
 if (s[i+j]!=k[j]) break;
 if (j==m) return i;
-}
+}}
+else{
+for (i=n-1;i>-1; i--)
+if (s[i]==k[0]){
+for (j=0; j<m; j++)
+if (s[i+j]-k[j]) break;
+if (j==m) return i;
+}}
 return -2;
 }
 
 
 void constants(char s[]){
-int m,n,i,l,k;
-char t[]="ans",r[N];
-m=scan(s,'e',1);
+int m,n,i,l,k,ii;
+char t[3][N]={"e","pi","ans"},str[N];
+double x;
+for (i=0; i<3; i++){
+m=scan2(s,t[i],1);
 n=strlen(s);
-while (m>-1){
-for (i=n+2; i>m+3; i--)
-s[i]=s[i-3];
-for (i=m; i<m+4; i++)
-s[i]="*10^"[i-m];
-m=scan(s,'e',1);
-n+=3;
-s[n]='\0';
+
+
+switch (i){
+case 0:
+strcpy(str,"*10^");
+break;
+case 1:
+x=acos(-1);
+num2str(x,str);
+break;
+case 2:
+num2str(ans,str);
+break;
 }
 
-m=scan2(s,t);
-n=strlen(s);
-num2str(ans,r);
-l=strlen(r);
-k=3-l;
 while (m>-1){
-n-=k;
-if (k>=0){
-for (i=m+l;i<n; i++)
-s[i]=s[i+k];
-s[i]='\0';
-}
-else{
-for (i=n-1; i>m+l-1;i--)
-s[i]=s[i+k];
-s[n]='\0';
-}
-for (i=m; i<m+l; i++)
-s[i]=r[i-m];
-m=scan2(s,t);
-}}
+Fill(s,str,m,m+i);
+m=scan2(s,t[i],1);
+}}}
+
 
 void unary(char s[]){
 int o,i;
 char a[]="+-",b[]="--",c[]="-+",d[]="++";
-o=scan2(s,a)+scan2(s,b)+scan2(s,c);
+o=scan2(s,a,1)+scan2(s,b,1)+scan2(s,c,1);
 while (o>-6){
 unar(s,a);
 unar(s,b);
 unar(s,c);
 unar(s,d);
-o=scan2(s,a)+scan2(s,b)+scan2(s,c);
+o=scan2(s,a,1)+scan2(s,b,1)+scan2(s,c,1);
 }
 o=strlen(s);
 while (s[0]=='+'){
@@ -131,7 +135,7 @@ o--;
 void unar(char s[], char k[2]){
 int i,m,n,o;
 n=strlen(s);
-m=scan2(s,k);
+m=scan2(s,k,1);
 while (m>-1){
 if (strcmp(k,"**")==0)
 s[m]='^';
@@ -146,7 +150,7 @@ for (i=m+1; i<n-1; i++)
 s[i]=s[i+1];
 s[i]='\0';
 n--;
-m=scan2(s,k);
+m=scan2(s,k,1);
 }}
 
 
@@ -233,12 +237,23 @@ if (k=='<') k='^';
 
 switch (k){
 case '^' :
+  if (y<M && x<M && x>-M){
+	  if (y>-M)
+		  puts("0^0 is an indeterminate form");
+	  else
+		  puts("Can't Divide by 0");
+	  longjmp(buff,1);
+  }
   z=pow(x,y);
   break;
 case '*' :
   z=x*y;
   break;
 case '/' :
+  if (y<M && y>-M){
+	  puts("Can't Divide by 0");
+	  longjmp(buff,1);
+  }
   z=x/y;
   break;
 case '+' :
@@ -259,25 +274,33 @@ str1[0]='+';
 str1[++a]='\0';
 }
 
-b=j-i-1-a; //difference between original expression and the result
-n-=b;
-
-if (b>0)
-for (l=1+i+a; l<n; l++){
-s[l]=s[b+l];
-}
-
-else if (b<0)
-for (l=n-1; l>i+a; l--){
-s[l]=s[b+l];
-}
-
-for (l=1; l<a+1; l++)
-s[i+l]=str1[l-1];
-
-s[n]='\0';
+Fill(s,str1,i+1,j-1);
 m=scan(s,k,1);
 }}
+
+
+void Fill (char s[], char r[], int a, int b){
+int i,z,l,n,m;
+n=strlen(s);
+m=strlen(r);
+l=b-a+1-m;
+n-=l;
+
+if (l>0)
+for (i=a+m; i<n; i++){
+s[i]=s[i+l];
+}
+
+else if (l<0)
+for (i=n-1; i>m+a-1; i--){
+s[i]=s[i+l];
+}
+
+for (i=0; i<m; i++){
+s[a+i]=r[i];
+}
+s[n]='\0';
+}
 
 
 void oper(char s[]){
@@ -312,7 +335,7 @@ b=(int) n;
 z=abso(n-b);
 if (b>9) m = (int) log10(n)+1;
 
-while (z>1e-4 && m+k<9){
+while (z>M && m+k<9){
 n*=10;
 k++;
 b=(int) n;
