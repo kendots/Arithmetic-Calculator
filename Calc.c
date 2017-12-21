@@ -287,18 +287,16 @@ l=b-a+1-m;
 n-=l;
 
 if (l>0)
-for (i=a+m; i<n; i++){
+for (i=a+m; i<n; i++)
 s[i]=s[i+l];
-}
 
 else if (l<0)
-for (i=n-1; i>m+a-1; i--){
+for (i=n-1; i>m+a-1; i--)
 s[i]=s[i+l];
-}
 
-for (i=0; i<m; i++){
+for (i=0; i<m; i++)
 s[a+i]=r[i];
-}
+
 s[n]='\0';
 }
 
