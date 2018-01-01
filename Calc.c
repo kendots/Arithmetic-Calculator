@@ -30,7 +30,6 @@ static jmp_buf buff;
 //Functions
 void oper (char []);
 void bracket (char []);
-void extras (char []);
 void unar (char [], char []);
 void unary (char []);
 void num2str (double, char []);
