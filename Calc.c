@@ -4,24 +4,47 @@
 #include<math.h>
 #include<setjmp.h>
 #define N 50
-#define M 1e-5
+#define ep 1e-5
 
+
+//Flags
+#define ln_X   2000
+#define sin_X  3000
+#define cos_X  3001
+#define tan_X  3002
+#define exp_X  3003
+#define log_X  3004
+#define asin_X 4000
+#define acos_X 4001
+#define atan_X 4002
+#define sinh_X 4003
+#define cosh_X 4004
+#define tanh_X 4005
+#define sqrt_X 4006
+
+
+//Global variables
 double ans=0;
 static jmp_buf buff;
 
-void oper(char []);
-void bracket(char []);
-void unar(char [], char []);
-void unary(char []);
-void num2str(double, char []);
-int  scan(char [], char, char);
-int  scan2(char [], char[], char);
-void solve(char [], char);
-void constants(char []);
-void Fill(char [], char [], int, int);
-int get(char []);
+//Functions
+void oper (char []);
+void bracket (char []);
+void extras (char []);
+void unar (char [], char []);
+void unary (char []);
+void num2str (double, char []);
+int  scan (char [], char, char, int);
+int  scan2 (char [], char[], char, int);
+void solve (char [], char);
+void constants (char []);
+void func (char []);
+void funcs (char [], int );
+void fill (char [], char [], int, int);
+int get (char []);
+double abso (double);
 
-main (){
+int main (){
 char s[N];
 
 printf("%45s\n","KENDOTS CALCULATOR");
@@ -49,33 +72,35 @@ return l;
 }
 
 
-int scan(char s[], char c, char d){
+int scan(char s[], char c, char d, int r){
 int i,n;
 n=strlen(s);
 if (d){
-for (i=0; i<n; i++)
+for (i=r; i<n; i++)
 if (s[i]==c) return i;
 }
 else{
-for (i=n-1; i>-1; i--)
+if (!r) r=n-1;
+for (i=r; i>-1; i--)
 if (s[i]==c) return i;
 }
 return -2;
 }
 
-int scan2(char s[], char k[], char mode){
+int scan2(char s[], char k[], char mode, int r){
 int i,j,n,m;
 n=strlen(s);
 m=strlen(k);
 if (mode){
-for (i=0; i<n; i++)
+for (i=r; i<n; i++)
 if (s[i]==k[0]){
 for (j=0; j<m; j++)
 if (s[i+j]!=k[j]) break;
 if (j==m) return i;
 }}
 else{
-for (i=n-1;i>-1; i--)
+if (!r) r=n-1;
+for (i=r;i>-1; i--)
 if (s[i]==k[0]){
 for (j=0; j<m; j++)
 if (s[i+j]-k[j]) break;
@@ -86,11 +111,12 @@ return -2;
 
 
 void constants(char s[]){
-int m,n,i,l,k,ii;
+int m,n,i,l,k,r;
 char t[3][N]={"e","pi","ans"},str[N];
 double x;
 for (i=0; i<3; i++){
-m=scan2(s,t[i],1);
+r=0;
+m=scan2(s,t[i],1,0);
 n=strlen(s);
 
 
@@ -98,31 +124,34 @@ switch (i){
 case 0:
 strcpy(str,"*10^");
 break;
+
 case 1:
 x=acos(-1);
 num2str(x,str);
 break;
+
 case 2:
 num2str(ans,str);
 break;
 }
 
 while (m>-1){
-Fill(s,str,m,m+i);
-m=scan2(s,t[i],1);
+if (s[m+i+1]>='a' && s[m+i+1]<='z') r=m+2;
+else fill(s,str,m,m+i);
+m=scan2(s,t[i],1,r);
 }}}
 
 
 void unary(char s[]){
 int o,i;
 char a[]="+-",b[]="--",c[]="-+",d[]="++";
-o=scan2(s,a,1)+scan2(s,b,1)+scan2(s,c,1);
+o=scan2(s,a,1,0)+scan2(s,b,1,0)+scan2(s,c,1,0);
 while (o>-6){
 unar(s,a);
 unar(s,b);
 unar(s,c);
 unar(s,d);
-o=scan2(s,a,1)+scan2(s,b,1)+scan2(s,c,1);
+o=scan2(s,a,1,0)+scan2(s,b,1,0)+scan2(s,c,1,0);
 }
 o=strlen(s);
 while (s[0]=='+'){
@@ -135,12 +164,12 @@ o--;
 void unar(char s[], char k[2]){
 int i,m,n,o;
 n=strlen(s);
-m=scan2(s,k,1);
+m=scan2(s,k,1,0);
 while (m>-1){
 if (strcmp(k,"**")==0)
 s[m]='^';
 else{
-o=scan(k,'-',1)+scan(k,'+',1);
+o=scan(k,'-',1,0)+scan(k,'+',1,0);
 if (o>0)
 s[m]='-';
 else
@@ -150,22 +179,41 @@ for (i=m+1; i<n-1; i++)
 s[i]=s[i+1];
 s[i]='\0';
 n--;
-m=scan2(s,k,1);
+m=scan2(s,k,1,0);
 }}
+
 
 
 void bracket(char s[]){
 char t[N],a[]="**";
 int i,m,n,l,k,h;
-m=scan(s,')',1);
+l=strlen(s);
+for (i=0; i<l; i++){
+if (s[i]=='{' || s[i]=='[') s[i]='(';
+if (s[i]=='}' || s[i]==']') s[i]=')';
+}
+
+m=0; n=0;
+for (i=0; i<l; i++){
+if (s[i]=='(') n++;
+if (s[i]==')') m++;
+}
+
+if (m-n){
+puts("Error: Misplacement of bracket(s)");
+longjmp(buff,1);
+}
+
+func(s);
+
+m=scan(s,')',1,0);
 while (m>0){
 l=strlen(s);
 for (i=0; i<m;i++)
 t[i]=s[i];
 t[m]='\0';
-n=scan(t,'(',0);
+n=scan(t,'(',0,0);
 
-if (n<0) return;
 for (i=n+1; i<m; i++)
 t[i-n-1]=s[i];
 t[i-n-1]='\0';
@@ -178,18 +226,168 @@ s[i-h]=s[i];
 s[i-h]='\0';
 for (i=0; i<k; i++)
 s[n+i]=t[i];
-m=scan(s,')',1);
+m=scan(s,')',1,0);
 }
-n=scan(s,'(',1);
-if(n>0) return;
+n=scan(s,'(',1,0);
 unar(s,a);
 }
+
+
+
+void func(char s[]){
+int i,l,m,n,k=0,v,u;
+char t[N],c;
+double x;
+l=strlen(s);
+m=scan(s,'(',0,0);
+
+while (m>-1){
+v=m;
+if ((s[m-1]>='a' && s[m-1]<='z' ) || (s[m-1]>='0' && s[m-1]<='9')){
+s[m]='[';
+i=1; v=m;
+while (i>0){
+v++;
+if 	(s[v]==')') i--;
+else if (s[v]=='(') i++;
+}
+s[v]=']';
+
+v=m;
+do v--;
+while (s[v-1]>='a' && s[v-1]<='z');
+
+u=m-v;
+switch (u){
+case 2:
+if (s[v]=='l' && s[v+1]=='n')
+funcs(s,ln_X);
+break;
+
+case 3:
+if (s[v]=='s' && s[v+1]=='i' && s[v+2]=='n')
+funcs(s,sin_X);
+else if (s[v]=='c' && s[v+1]=='o' && s[v+2]=='s')
+funcs(s,cos_X);
+else if (s[v]=='t' && s[v+1]=='a' && s[v+2]=='n')
+funcs(s,tan_X);
+else if (s[v]=='e' && s[v+1]=='x' && s[v+2]=='p')
+funcs(s,exp_X);
+break;
+
+case 4:
+if (s[v]=='a'){
+if (s[v+1]=='s' && s[v+2]=='i' && s[v+3]=='n')
+funcs(s,asin_X);
+else if (s[v+1]=='c' && s[v+2]=='o' && s[v+3]=='s')
+funcs(s,acos_X);
+else if (s[v+1]=='t' && s[v+2]=='a' && s[v+3]=='n')
+funcs(s,atan_X);
+}
+else if (s[v+3]=='h'){
+if (s[v]=='s' && s[v+1]=='i' && s[v+2]=='n')
+funcs(s,sinh_X);
+else if (s[v]=='c' && s[v+1]=='o' && s[v+2]=='s')
+funcs(s,cosh_X);
+else if (s[v]=='t' && s[v+1]=='a' && s[v+2]=='n')
+funcs(s,tanh_X);
+}
+else if (s[v]=='s' && s[v+1]=='q' && s[v+2]=='r' && s[v+3]=='t')
+funcs(s,sqrt_X);
+break;
+}}
+else k=m-1;
+
+m=scan(s,'(',0,k);
+}}
+
+
+
+void funcs(char s[], int Flag){
+int i,m,n,l;
+char t[N];
+double x,y;
+m=scan(s,'[',0,0);
+n=scan(s,']',0,0);
+l=n-m-1;
+
+for (i=0; i<l; i++)
+t[i]=s[i+m+1];
+t[i]='\0';
+oper(t);
+x=atof(t);
+
+switch (Flag){
+case ln_X:
+y=log(x);
+break;
+
+case sin_X:
+y=sin(x);
+break;
+
+case cos_X:
+y=cos(x);
+break;
+
+case tan_X:
+y=tan(x);
+break;
+
+case exp_X:
+y=exp(x);
+break;
+
+case log_X:
+y=log(x);
+break;
+
+case asin_X:
+y=asin(x);
+break;
+
+case acos_X:
+y=acos(x);
+break;
+
+case atan_X:
+y=atan(x);
+break;
+
+case sinh_X:
+y=sinh(x);
+break;
+
+case cosh_X:
+y=cosh(x);
+break;
+
+case tanh_X:
+y=tanh(x);
+break;
+
+case sqrt_X:
+y=sqrt(x);
+break;
+
+default:
+return;
+}
+
+num2str(y,t);
+Flag=(int) Flag/1000;
+m-=Flag;
+s[m]='(';
+s[n]=')';
+fill(s,t,m+1,n-1);
+}
+
 
 void solve (char s[], char k){
 char str1[N],str2[N],str[]=".1234567890";
 int i,j,l,n,m,a,b;
 double x,y,z=0;
-m=scan(s,k,1);
+m=scan(s,k,1,0);
 while (m>-1){
 n = strlen(s);
 
@@ -199,14 +397,14 @@ for (i=0; i<n; i++)
 s[i]=s[i+1];
 s[n]='\0';
 }
-m=scan(s,k,1);
+m=scan(s,k,1,0);
 
-if ( s[0]=='-') m=scan(s,k,0);
+if ( s[0]=='-') m=scan(s,k,0,0);
 
 if (m<1) break;
 
 for (i=m-1; i>-1; i--)
-if (scan(str,s[i],1)<0){
+if (scan(str,s[i],1,0)<0){
 if ((s[i]=='+' || s[i]=='-') && i>-1 && k!='^') i--;
 break;
 }
@@ -220,7 +418,7 @@ s[l]='\0';
 }
 else if (s[j]=='-') j++;
 
-while (scan(str,s[j],1)>=0 && j<n+1)  j++;
+while (scan(str,s[j],1,0)>=0 && j<n+1)  j++;
 
 for (l=0; l<m-i-1; l++)
 str1[l]=s[l+i+1];
@@ -237,20 +435,21 @@ if (k=='<') k='^';
 
 switch (k){
 case '^' :
-  if (y<M && x<M && x>-M){
-	  if (y>-M)
+  if (y<ep && x<ep && x>-ep){
+	  if (y>-ep)
 		  puts("0^0 is an indeterminate form");
 	  else
 		  puts("Can't Divide by 0");
 	  longjmp(buff,1);
   }
+
   z=pow(x,y);
   break;
 case '*' :
   z=x*y;
   break;
 case '/' :
-  if (y<M && y>-M){
+  if (y<ep && y>-ep){
 	  puts("Can't Divide by 0");
 	  longjmp(buff,1);
   }
@@ -274,12 +473,12 @@ str1[0]='+';
 str1[++a]='\0';
 }
 
-Fill(s,str1,i+1,j-1);
-m=scan(s,k,1);
+fill(s,str1,i+1,j-1);
+m=scan(s,k,1,0);
 }}
 
 
-void Fill (char s[], char r[], int a, int b){
+void fill (char s[], char r[], int a, int b){
 int i,z,l,n,m;
 n=strlen(s);
 m=strlen(r);
@@ -333,7 +532,7 @@ b=(int) n;
 z=abso(n-b);
 if (b>9) m = (int) log10(n)+1;
 
-while (z>M && m+k<9){
+while (z>ep && m+k<9){
 n*=10;
 k++;
 b=(int) n;
